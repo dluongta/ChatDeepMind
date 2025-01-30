@@ -1,60 +1,79 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import './App.css'; // Ensure the CSS file is linked properly
+import "./App.css";
 
 function App() {
-  const [message, setMessage] = useState("");  // Store current user input
-  const [chatHistory, setChatHistory] = useState([]);  // Store conversation history
-  const [isLoading, setIsLoading] = useState(false);  // For loading state
-  const [error, setError] = useState(null);  // For error state
+  const [message, setMessage] = useState("");
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const formatBotResponse = (text) => {
+    return text
+      .replace(/\*\s\**(.*?)\*\*/g, "<h4>$1</h4>")  // Match * **text** to <h4>
+      .replace(/\*(.*?)\*/g, "<h3>$1</h3>")        // Match *text* to <h3>
+      .replace(/```([\s\S]*?)```/g, (match, code) => {
+        return `<pre><code>${code}</code><button class="copy-button">📋</button></pre>`;
+      })
+      .replace(/`(.*?)`/g, "<code>$1</code>");      // Format single backticks to <code>
+  };
+  
+  
+
+  useEffect(() => {
+    document.addEventListener("click", (event) => {
+      if (event.target.classList.contains("copy-button")) {
+        const codeElement = event.target.previousElementSibling;
+        if (codeElement) {
+          navigator.clipboard.writeText(codeElement.innerText).then(() => {
+            event.target.textContent = "✔️";
+            setTimeout(() => (event.target.textContent = "📋"), 2000);
+          });
+        }
+      }
+    });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message) return; // Avoid sending empty messages
-    setIsLoading(true); // Set loading to true when sending message
-    setError(null); // Reset errors
+    if (!message) return;
+    setIsLoading(true);
+    setError(null);
 
-    // Add the user's message to the chat history
     const newMessage = { sender: "user", text: message };
     setChatHistory((prevHistory) => [...prevHistory, newMessage]);
-    setMessage(""); // Reset the input field
+    setMessage("");
+
+    let isMounted = true;
 
     try {
-      // Send request to Gemini API
       const response = await axios.post(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCH3VT-wJX7iW53WRJTKopJgttnWuHzolY",
         {
-          contents: [
-            {
-              parts: [
-                {
-                  text: message,
-                },
-              ],
-            },
-          ],
+          contents: [{ parts: [{ text: message }] }],
         },
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         }
       );
 
-      // Extract bot's response from API response
-      const botMessage = {
-        sender: "bot",
-        text: response.data.candidates[0].content.parts[0].text,
-      };
-
-      // Add the bot's response to the chat history
-      setChatHistory((prevHistory) => [...prevHistory, botMessage]);
+      if (isMounted) {
+        const botMessage = {
+          sender: "bot",
+          text: formatBotResponse(response.data.candidates[0].content.parts[0].text),
+        };
+        setChatHistory((prevHistory) => [...prevHistory, botMessage]);
+      }
     } catch (error) {
       console.error("Error during API call:", error);
-      setError("Có lỗi xảy ra. Vui lòng thử lại.");
+      if (isMounted) setError("Có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
-      setIsLoading(false); // After completing the request, set loading to false
+      if (isMounted) setIsLoading(false);
     }
+
+    return () => {
+      isMounted = false;
+    };
   };
 
   return (
@@ -63,14 +82,12 @@ function App() {
         <h1>Chatbot</h1>
 
         <div className="chat-history">
-          {/* Render chat history dynamically */}
           {chatHistory.map((message, index) => (
             <div
               key={index}
-              className={`message ${message.sender === "user" ? "user" : "bot"}`}
-            >
-              <p>{message.text}</p>
-            </div>
+              className={`message ${message.sender}`}
+              dangerouslySetInnerHTML={{ __html: message.text }}
+            />
           ))}
         </div>
 
