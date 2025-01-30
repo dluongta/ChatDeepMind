@@ -10,8 +10,8 @@ function App() {
 
   const formatBotResponse = (text) => {
     return text
-      .replace(/\*\s\**(.*?)\*\*/g, "<h4>$1</h4>")  // Match * **text** to <h4>
-      .replace(/\*(.*?)\*/g, "<h3>$1</h3>")        // Match *text* to <h3>
+      .replace(/\*\s\**(.*?)\*\*/g, "<h5><b>$1</b></h5>")  // Match * **text** to <h4>
+      .replace(/\*(.*?)\*/g, "<h4><b>$1</b></h4>")        // Match *text* to <h3>
       .replace(/```([\s\S]*?)```/g, (match, code) => {
         return `<pre><code>${code}</code><button class="copy-button">📋</button></pre>`;
       })
