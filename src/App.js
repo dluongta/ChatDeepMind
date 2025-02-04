@@ -48,7 +48,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCH3VT-wJX7iW53WRJTKopJgttnWuHzolY",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyAJC7L9bXORVgkjqQrF0Ta9mYDceu5mSYE",
         {
           contents: [{ parts: [{ text: message }] }],
         },
